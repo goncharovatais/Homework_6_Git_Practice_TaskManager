@@ -1,0 +1,326 @@
+using System;
+
+public interface ICombatant
+{
+    string Name { get; }
+    int HP { get; set; }
+    bool IsDead { get; }
+    int Damage { get; }
+    void Attack(ICombatant target);
+    void TakeDamage(int amount);
+}
+
+public class Knight : ICombatant
+{
+    public string Name { get; }
+    public int HP { get; set; }
+    public bool IsDead => HP <= 0;
+    public int Damage { get; }
+
+    public Knight(string name)
+    {
+        Name = name;
+        HP = 150;
+        Damage = 25;
+    }
+
+    public void Attack(ICombatant target)
+    {
+        if (IsDead)
+        {
+            Console.WriteLine($"Рыцарь {Name} мертв и не может атаковать.");
+            return;
+        }
+        if (target.IsDead)
+        {
+            Console.WriteLine($"Цель {target.Name} уже мертва.");
+            return;
+        }
+
+        Console.WriteLine($"Рыцарь {Name} атакует!");
+        target.TakeDamage(Damage);
+    }
+
+    public void TakeDamage(int amount)
+    {
+        HP = Math.Max(0, HP - amount);
+        Console.WriteLine($"Рыцарь {Name} получил {amount} урона. Осталось HP: {HP}");
+    }
+}
+
+public class Mage : ICombatant
+{
+    public string Name { get; }
+    public int HP { get; set; }
+    public bool IsDead => HP <= 0;
+    public int Damage { get; }
+
+    public Mage(string name)
+    {
+        Name = name;
+        HP = 80;
+        Damage = 40;
+    }
+
+    public void Attack(ICombatant target)
+    {
+        if (IsDead)
+        {
+            Console.WriteLine($"Маг {Name} мертв и не может атаковать.");
+            return;
+        }
+        if (target.IsDead)
+        {
+            Console.WriteLine($"Маг {Name} не может атаковать мертвую цель.");
+            return;
+        }
+        Console.WriteLine($"Маг {Name} произносит двойное заклинание!");
+        target.TakeDamage(Damage);
+        target.TakeDamage(Damage);
+
+        if (!target.IsDead)
+        {
+            target.TakeDamage(Damage);
+        }
+    }
+
+    public void TakeDamage(int amount)
+    {
+        HP = Math.Max(0, HP - amount);
+        Console.WriteLine($"Маг {Name} получил {amount} урона. Осталось HP: {HP}");
+    }
+}
+
+public class Задача2
+{
+    public static void Main()
+    {
+        ICombatant knight = new Knight("Артур");
+        ICombatant mage = new Mage("Мерлин");
+
+        while (!knight.IsDead && !mage.IsDead)
+        {
+            knight.Attack(mage);
+            if (mage.IsDead) break;
+
+            mage.Attack(knight);
+            if (knight.IsDead) break;
+        }
+
+        Console.WriteLine();
+        if (knight.IsDead)
+            Console.WriteLine($"Победил Маг {mage.Name}!");
+        else
+            Console.WriteLine($"Победил Рыцарь {knight.Name}!");
+    }
+}
+
+//Задача 2.2
+public enum Rarity
+{
+    Common,
+    Rare,
+    Legendary
+}
+
+public interface IUsableItem
+{
+    string Name { get; }
+    string Description { get; }
+    Rarity Rarity { get; }
+    void Use(Player player);
+}
+
+public class Player
+{
+    public string Name { get; set; }
+    public int HP { get; set; }
+    public int Damage { get; set; }
+    public bool IsDead => HP <= 0;
+
+    public Player(string name, int hp, int damage)
+    {
+        Name = name;
+        HP = hp;
+        Damage = damage;
+    }
+
+    public void Heal(int amount)
+    {
+        HP += amount;
+    }
+
+    public void IncreaseDamage(int amount)
+    {
+        Damage += amount;
+    }
+}
+
+public class HealthPotion : IUsableItem
+{
+    public string Name => "Зелье здоровья";
+    public string Description => "Восстанавливает 50 HP.";
+    public Rarity Rarity => Rarity.Common;
+
+    public void Use(Player player)
+    {
+        player.Heal(50);
+        Console.WriteLine($"Вы выпили зелье и восстановили 50 HP.");
+    }
+}
+
+public class Sword : IUsableItem
+{
+    public string Name => "Меч";
+    public string Description => "Увеличивает урон на 10.";
+    public Rarity Rarity => Rarity.Rare;
+
+    public void Use(Player player)
+    {
+        player.IncreaseDamage(10);
+        Console.WriteLine($"Вы экипировали меч. Ваш урон увеличен на 10.");
+    }
+}
+
+public class AncientScroll : IUsableItem
+{
+    public string Name => "Древний свиток";
+    public string Description => "Наносит 20 урона, но увеличивает урон на 30.";
+    public Rarity Rarity => Rarity.Legendary;
+
+    public void Use(Player player)
+    {
+        player.HP -= 20;
+        player.IncreaseDamage(30);
+        Console.WriteLine($"Свиток обжег вас на 20 урона, но вы чувствуете небывалую силу! Урон увеличен на 30.");
+    }
+}
+
+public class Задача22
+{
+    public static void Main1()
+    {
+        Player player = new Player("Герой", 100, 10);
+
+        List<IUsableItem> inventory = new List<IUsableItem>
+        {
+            new HealthPotion(),
+            new Sword(),
+            new AncientScroll()
+        };
+
+        Console.WriteLine($"Начальные характеристики {player.Name}: HP = {player.HP}, Урон = {player.Damage}\n");
+
+        foreach (var item in inventory)
+        {
+            Console.WriteLine($"Использование: {item.Name} ({item.Rarity})");
+            item.Use(player);
+            Console.WriteLine($"Текущий статус: HP = {player.HP}, Урон = {player.Damage}\n");
+        }
+
+        Console.WriteLine($"Итоговые характеристики: HP = {player.HP}, Урон = {player.Damage}");
+        Console.WriteLine(player.IsDead ? "Игрок мертв." : "Игрок жив.");
+    }
+}
+
+//Задача 2.3
+
+public interface IDamageCalculator
+{
+    int CalculateDamage(int baseDamage, int targetArmor);
+}
+
+public class PhysicalDamageCalculator : IDamageCalculator
+{
+    public int CalculateDamage(int baseDamage, int targetArmor)
+    {
+        int damage = baseDamage - (targetArmor / 2);
+        return Math.Max(1, damage);
+    }
+}
+public class MagicDamageCalculator : IDamageCalculator
+{
+    public int CalculateDamage(int baseDamage, int targetArmor)
+    {
+        int damage = baseDamage - (targetArmor / 4);
+        damage = Math.Max(1, damage);
+        if (targetArmor == 0)
+        {
+            damage *= 2;
+        }
+        return damage;
+    }
+}
+
+public class FireDamageCalculator : IDamageCalculator
+{
+    public int CalculateDamage(int baseDamage, int targetArmor)
+    {
+        int damage = baseDamage - (targetArmor / 10);
+        damage = Math.Max(1, damage);
+        if (baseDamage > 50)
+        {
+            damage += 10;
+        }
+        return damage;
+    }
+}
+
+public class Unit
+{
+    public string Name { get; set; }
+    public int HP { get; set; }
+    public int Armor { get; set; }
+
+    public Unit(string name, int hp, int armor)
+    {
+        Name = name;
+        HP = hp;
+        Armor = armor;
+    }
+}
+
+public class DamageSystem
+{
+    private readonly IDamageCalculator _damageCalculator;
+
+    public DamageSystem(IDamageCalculator damageCalculator)
+    {
+        _damageCalculator = damageCalculator;
+    }
+
+    public void ApplyDamage(Unit target, int baseDamage)
+    {
+        int finalDamage = _damageCalculator.CalculateDamage(baseDamage, target.Armor);
+
+        target.HP = Math.Max(0, target.HP - finalDamage);
+
+        Console.WriteLine($"Юнит {target.Name} получил {finalDamage} урона. Осталось HP: {target.HP}");
+    }
+}
+
+public class Задача23
+{
+    public static void Main()
+    {
+        Unit goblin1 = new Unit("Гоблин-воин", 100, 10);
+        Unit goblin2 = new Unit("Гоблин-маг", 100, 10);
+        Unit goblin3 = new Unit("Гоблин-танк", 100, 10);
+
+        int baseDmg = 60;
+
+        Console.WriteLine($"Наносим базовый урон {baseDmg} по трем одинаковым гоблинам разными типами урона:\n");
+
+        
+        DamageSystem physSystem = new DamageSystem(new PhysicalDamageCalculator());
+        physSystem.ApplyDamage(goblin1, baseDmg);
+
+        
+        DamageSystem magicSystem = new DamageSystem(new MagicDamageCalculator());
+        magicSystem.ApplyDamage(goblin2, baseDmg);
+
+       
+        DamageSystem fireSystem = new DamageSystem(new FireDamageCalculator());
+        fireSystem.ApplyDamage(goblin3, baseDmg);
+    }
+}
